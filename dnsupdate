@@ -1,0 +1,38 @@
+#!/bin/sh
+##############################
+# DynDNS Updater Skript v0.1 #
+##############################
+
+# Setzen der Zugangsdaten für DynDNS
+DYNHOST=someone.dyndns.org
+DYNUSER=someone
+DYNPASS=somepass
+
+# Sonstige Variablen
+FILECURIP=/tmp/ipcur.tmp
+FILEUPDDNS=/tmp/ipupdate.tmp
+LOGFILE=/tmp/dnsupdate.log
+SLEEPTIME=60
+
+# Start der Schleife
+while : ; do
+
+# Bei DynDNS hinterlegte IP abfragen
+DNSIP=`ping -c 1  $DYNHOST | grep icmp | awk '{print $4}' | sed 's/://g'`
+echo $DNSIP > $LOGFILE
+
+# Aktuelle Provider IP abfragen
+CURIP=`wget -q http://ifconfig.me/ip -O $FILECURIP && cat $FILECURIP`
+echo $CURIP >> $LOGFILE
+
+# Prüfen ob es ein IP-Wechsel gab
+
+if [ "$DNSIP" != "$CURIP" ]; then
+                echo "IP-Wechsel" >> $LOGFILE
+                wget -q http://$DYNUSER:$DYNPASS@members.dyndns.org/nic/update?hostname=$DYNHOST -O $FILEUPDDNS
+        else
+                echo "kein IP-Wechsel" >> $LOGFILE
+fi
+
+sleep $SLEEPTIME
+done
